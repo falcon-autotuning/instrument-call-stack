@@ -1,0 +1,11 @@
+{
+  "name": "instrument-call-stack",
+  "version": "1.0.0",
+  "description": "A call stack implemenation in C99 for use by Cpp, Go, and Lua",
+  "homepage": "https://github.com/falcon-autotuning/instrument-call-stack",
+  "dependencies": [
+    "cmocka",
+    "lua"
+  ],
+  "builtin-baseline": "e5a1490e1409d175932ef6014519e9ae149ddb7c"
+}
