@@ -2,15 +2,15 @@
 
 include(CMakeFindDependencyMacro)
 
+# Load exported targets first
+include("${CMAKE_CURRENT_LIST_DIR}/instrument-call-stack-targets.cmake")
+
 # If Lua target exists, expose dependency
-if(TARGET instrument-call-stack-lua)
+if(TARGET instrument-call-stack::instrument-call-stack-lua)
     find_dependency(Lua)
 endif()
 
-# Load exported targets
-include("${CMAKE_CURRENT_LIST_DIR}/instrument-call-stack-targets.cmake")
-
-# Handle requested components
+# Supported components
 set(_supported_components lua)
 
 foreach(_comp ${instrument_call_stack_FIND_COMPONENTS})
@@ -19,7 +19,7 @@ foreach(_comp ${instrument_call_stack_FIND_COMPONENTS})
     endif()
 
     if(_comp STREQUAL "lua")
-        if(NOT TARGET instrument-call-stack-lua)
+        if(NOT TARGET instrument-call-stack::instrument-call-stack-lua)
             set(instrument-call-stack_lua_FOUND FALSE)
         else()
             set(instrument-call-stack_lua_FOUND TRUE)
