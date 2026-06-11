@@ -55,6 +55,16 @@ INSTRUMENT_CALL_STACK_EXPORT void push_callstack_global(lua_State *L,
  */
 INSTRUMENT_CALL_STACK_EXPORT void register_instrument_call_stack(lua_State *L);
 
+/**
+ * @brief Extract a CallStack pointer from a Lua userdata.
+ *
+ * @param L Lua state
+ * @param index Stack index
+ * @return CallStack* or NULL if not valid
+ */
+INSTRUMENT_CALL_STACK_EXPORT
+CallStack *lua_check_callstack(lua_State *L, int index);
+
 #ifdef __cplusplus
 }
 #endif

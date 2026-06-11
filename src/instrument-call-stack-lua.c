@@ -213,3 +213,13 @@ int luaopen_instrument_call_stack(lua_State *L) {
 
   return 1;
 }
+
+CallStack *lua_check_callstack(lua_State *L, int index) {
+  lua_callstack *cs = (lua_callstack *)luaL_testudata(L, index, "CallStack");
+
+  if (!cs || !cs->stack) {
+    return NULL;
+  }
+
+  return cs->stack;
+}

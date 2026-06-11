@@ -300,9 +300,105 @@ static void test_lua_constructor_missing_required(void **state) {
   lua_close(L);
 }
 
-/* =========================
-   MAIN
-   ========================= */
+static void test_lua_check_callstack_valid(void **state) {
+  (void)state;
+
+  lua_State *L = create_lua();
+
+  CallStack *original = instrument_call_stack_create("i", "g", 1, "cmd");
+
+  push_callstack(L, original, 0);
+
+  CallStack *extracted = lua_check_callstack(L, -1);
+
+  assert_non_null(extracted);
+  assert_string_equal(instrument_call_stack_get_command(extracted), "cmd");
+
+  instrument_call_stack_free(original);
+  lua_close(L);
+}
+
+static void test_lua_check_callstack_non_userdata(void **state) {
+  (void)state;
+
+  lua_State *L = create_lua();
+
+  lua_pushstring(L, "not a callstack");
+
+  CallStack *extracted = lua_check_callstack(L, -1);
+
+  assert_null(extracted);
+
+  lua_close(L);
+}
+
+static void test_lua_check_callstack_wrong_metatable(void **state) {
+  (void)state;
+
+  lua_State *L = create_lua();
+
+  // Create unrelated userdata
+  void *ud = lua_newuserdata(L, sizeof(int));
+  (void)ud;
+
+  luaL_newmetatable(L, "NotCallStack");
+  lua_setmetatable(L, -2);
+
+  CallStack *extracted = lua_check_callstack(L, -1);
+
+  assert_null(extracted);
+
+  lua_close(L);
+}
+
+static void test_lua_check_callstack_null_internal(void **state) {
+  (void)state;
+
+  lua_State *L = create_lua();
+
+  // Manually push userdata with NULL stack
+  typedef struct {
+    CallStack *stack;
+    int owned;
+  } lua_callstack;
+
+  lua_callstack *cs =
+      (lua_callstack *)lua_newuserdata(L, sizeof(lua_callstack));
+
+  cs->stack = NULL;
+  cs->owned = 0;
+
+  luaL_newmetatable(L, "CallStack");
+  lua_setmetatable(L, -2);
+
+  CallStack *extracted = lua_check_callstack(L, -1);
+
+  assert_null(extracted);
+
+  lua_close(L);
+}
+
+static void test_lua_check_callstack_indexing(void **state) {
+  (void)state;
+
+  lua_State *L = create_lua();
+
+  CallStack *cs = instrument_call_stack_create("a", "", -1, "b");
+
+  push_callstack(L, cs, 0);
+
+  lua_pushnumber(L, 42); // push extra value
+
+  // CallStack is now at -2
+  CallStack *extracted = lua_check_callstack(L, -2);
+
+  assert_non_null(extracted);
+  assert_string_equal(instrument_call_stack_get_instrument_name(extracted),
+                      "a");
+
+  instrument_call_stack_free(cs);
+  lua_close(L);
+}
 
 int main(void) {
   const struct CMUnitTest tests[] = {
@@ -320,6 +416,11 @@ int main(void) {
       cmocka_unit_test(test_lua_clone_independence),
       cmocka_unit_test(test_lua_clone_gc_owned),
       cmocka_unit_test(test_lua_constructor_missing_required),
+      cmocka_unit_test(test_lua_check_callstack_valid),
+      cmocka_unit_test(test_lua_check_callstack_non_userdata),
+      cmocka_unit_test(test_lua_check_callstack_wrong_metatable),
+      cmocka_unit_test(test_lua_check_callstack_null_internal),
+      cmocka_unit_test(test_lua_check_callstack_indexing),
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);
