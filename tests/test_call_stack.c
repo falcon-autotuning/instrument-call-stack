@@ -13,7 +13,7 @@
 
 static const char *VALID_NAME = "instr";
 static const char *VALID_GROUP = "group";
-static const char *VALID_CHANNEL = "chan";
+static int VALID_CHANNEL = 2;
 static const char *VALID_COMMAND = "cmd";
 
 /* Generate long string (longer than max) */
@@ -42,12 +42,12 @@ static void test_create_valid(void **state) {
 static void test_create_null_inputs(void **state) {
   (void)state;
 
-  CallStack *cs = instrument_call_stack_create(NULL, NULL, NULL, NULL);
+  CallStack *cs = instrument_call_stack_create(NULL, NULL, 0, NULL);
   assert_non_null(cs);
 
   assert_string_equal(instrument_call_stack_get_instrument_name(cs), "");
   assert_string_equal(instrument_call_stack_get_channel_group(cs), "");
-  assert_string_equal(instrument_call_stack_get_channel(cs), "");
+  assert_int_equal(instrument_call_stack_get_channel(cs), 0);
   assert_string_equal(instrument_call_stack_get_command(cs), "");
 
   instrument_call_stack_free(cs);
@@ -73,7 +73,7 @@ static void test_getters_valid(void **state) {
   assert_string_equal(instrument_call_stack_get_instrument_name(cs),
                       VALID_NAME);
   assert_string_equal(instrument_call_stack_get_channel_group(cs), VALID_GROUP);
-  assert_string_equal(instrument_call_stack_get_channel(cs), VALID_CHANNEL);
+  assert_int_equal(instrument_call_stack_get_channel(cs), VALID_CHANNEL);
   assert_string_equal(instrument_call_stack_get_command(cs), VALID_COMMAND);
 
   instrument_call_stack_free(cs);
@@ -84,7 +84,7 @@ static void test_getters_null_stack(void **state) {
 
   assert_null(instrument_call_stack_get_instrument_name(NULL));
   assert_null(instrument_call_stack_get_channel_group(NULL));
-  assert_null(instrument_call_stack_get_channel(NULL));
+  assert_true(instrument_call_stack_get_channel(NULL) == -1);
   assert_null(instrument_call_stack_get_command(NULL));
 }
 
@@ -99,7 +99,7 @@ static void test_truncation(void **state) {
   fill_long_string(long_str, sizeof(long_str));
 
   CallStack *cs =
-      instrument_call_stack_create(long_str, long_str, long_str, long_str);
+      instrument_call_stack_create(long_str, long_str, VALID_CHANNEL, long_str);
 
   const char *name = instrument_call_stack_get_instrument_name(cs);
 
@@ -128,7 +128,6 @@ static void test_serialize_valid(void **state) {
 
   /* Ensure expected size behavior */
   /* We cannot directly check size, but we know it's fixed */
-
   free(blob);
   instrument_call_stack_free(cs);
 }
@@ -136,7 +135,7 @@ static void test_serialize_valid(void **state) {
 static void test_serialize_null(void **state) {
   (void)state;
 
-  char *blob = instrument_call_stack_serialize(NULL);
+  const char *blob = instrument_call_stack_serialize(NULL);
   assert_null(blob);
 }
 
@@ -160,7 +159,7 @@ static void test_deserialize_valid(void **state) {
                       VALID_NAME);
   assert_string_equal(instrument_call_stack_get_channel_group(copy),
                       VALID_GROUP);
-  assert_string_equal(instrument_call_stack_get_channel(copy), VALID_CHANNEL);
+  assert_int_equal(instrument_call_stack_get_channel(copy), VALID_CHANNEL);
   assert_string_equal(instrument_call_stack_get_command(copy), VALID_COMMAND);
 
   free(blob);
@@ -194,8 +193,8 @@ static void test_roundtrip(void **state) {
   assert_string_equal(instrument_call_stack_get_channel_group(copy),
                       instrument_call_stack_get_channel_group(original));
 
-  assert_string_equal(instrument_call_stack_get_channel(copy),
-                      instrument_call_stack_get_channel(original));
+  assert_int_equal(instrument_call_stack_get_channel(copy),
+                   instrument_call_stack_get_channel(original));
 
   assert_string_equal(instrument_call_stack_get_command(copy),
                       instrument_call_stack_get_command(original));

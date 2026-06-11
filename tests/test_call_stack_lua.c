@@ -33,7 +33,7 @@ static void test_lua_getters_basic(void **state) {
 
   lua_State *L = create_lua();
 
-  CallStack *cs = instrument_call_stack_create("i", "g", "c", "cmd");
+  CallStack *cs = instrument_call_stack_create("i", "g", 1, "cmd");
 
   push_callstack(L, cs, 0);
   lua_setglobal(L, "stack");
@@ -41,7 +41,7 @@ static void test_lua_getters_basic(void **state) {
   assert_int_equal(luaL_dostring(L,
                                  "assert(stack:get_instrument_name() == 'i')\n"
                                  "assert(stack:get_channel_group() == 'g')\n"
-                                 "assert(stack:get_channel() == 'c')\n"
+                                 "assert(stack:get_channel() == 1)\n"
                                  "assert(stack:get_command() == 'cmd')\n"),
                    LUA_OK);
 
@@ -54,7 +54,7 @@ static void test_push_callstack_global(void **state) {
 
   lua_State *L = create_lua();
 
-  CallStack *cs = instrument_call_stack_create("g1", "g2", "g3", "g4");
+  CallStack *cs = instrument_call_stack_create("g1", "g2", 3, "g4");
 
   push_callstack_global(L, cs, 0, "global_stack");
 
@@ -84,7 +84,7 @@ static void test_lua_owned_gc(void **state) {
 
   lua_State *L = create_lua();
 
-  CallStack *cs = instrument_call_stack_create("x", "y", "z", "cmd");
+  CallStack *cs = instrument_call_stack_create("x", "y", 4, "cmd");
 
   push_callstack(L, cs, 1);
   lua_setglobal(L, "stack");
@@ -99,7 +99,7 @@ static void test_lua_not_owned_gc(void **state) {
 
   lua_State *L = create_lua();
 
-  CallStack *cs = instrument_call_stack_create("x", "y", "z", "cmd");
+  CallStack *cs = instrument_call_stack_create("x", "y", 4, "cmd");
 
   push_callstack(L, cs, 0);
   lua_setglobal(L, "stack");
@@ -117,7 +117,7 @@ static void test_lua_null_safety(void **state) {
 
   lua_State *L = create_lua();
 
-  CallStack *cs = instrument_call_stack_create(NULL, NULL, NULL, NULL);
+  CallStack *cs = instrument_call_stack_create(NULL, NULL, -1, NULL);
 
   push_callstack(L, cs, 0);
   lua_setglobal(L, "stack");
@@ -125,7 +125,7 @@ static void test_lua_null_safety(void **state) {
   assert_int_equal(luaL_dostring(L,
                                  "assert(stack:get_instrument_name() == '')\n"
                                  "assert(stack:get_channel_group() == '')\n"
-                                 "assert(stack:get_channel() == '')\n"
+                                 "assert(stack:get_channel() == -1)\n"
                                  "assert(stack:get_command() == '')\n"),
                    LUA_OK);
 

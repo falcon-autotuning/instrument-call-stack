@@ -38,7 +38,7 @@ static int l_get_channel_group(lua_State *L) {
 
 static int l_get_channel(lua_State *L) {
   lua_callstack *cs = check_callstack(L);
-  lua_pushstring(L, instrument_call_stack_get_channel(cs->stack));
+  lua_pushnumber(L, instrument_call_stack_get_channel(cs->stack));
   return 1;
 }
 

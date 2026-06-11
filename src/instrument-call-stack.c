@@ -6,7 +6,7 @@
 struct CallStack {
   char instrument_name[INST_STACK_MAX_STRING_LEN];
   char channel_group[INST_STACK_MAX_STRING_LEN];
-  char channel[INST_STACK_MAX_STRING_LEN];
+  int channel;
   char command[INST_STACK_MAX_STRING_LEN];
 };
 
@@ -28,8 +28,7 @@ static void copy_string(char *dest, const char *src) {
    ========================= */
 
 CallStack *instrument_call_stack_create(const char *instrument_name,
-                                        const char *channel_group,
-                                        const char *channel,
+                                        const char *channel_group, int channel,
                                         const char *command) {
   CallStack *stack = (CallStack *)malloc(sizeof(CallStack));
   if (!stack) {
@@ -38,7 +37,7 @@ CallStack *instrument_call_stack_create(const char *instrument_name,
 
   copy_string(stack->instrument_name, instrument_name);
   copy_string(stack->channel_group, channel_group);
-  copy_string(stack->channel, channel);
+  stack->channel = channel;
   copy_string(stack->command, command);
 
   return stack;
@@ -62,9 +61,9 @@ const char *instrument_call_stack_get_channel_group(const CallStack *stack) {
   return stack->channel_group;
 }
 
-const char *instrument_call_stack_get_channel(const CallStack *stack) {
+const int instrument_call_stack_get_channel(const CallStack *stack) {
   if (!stack)
-    return NULL;
+    return -1;
   return stack->channel;
 }
 
@@ -74,7 +73,7 @@ const char *instrument_call_stack_get_command(const CallStack *stack) {
   return stack->command;
 }
 
-const char *instrument_call_stack_serialize(const CallStack *stack) {
+char *instrument_call_stack_serialize(const CallStack *stack) {
   if (!stack)
     return NULL;
 
@@ -102,7 +101,6 @@ CallStack *instrument_call_stack_deserialize(const char *buffer) {
   /* Enforce null termination defensively */
   stack->instrument_name[INST_STACK_MAX_STRING_LEN - 1] = '\0';
   stack->channel_group[INST_STACK_MAX_STRING_LEN - 1] = '\0';
-  stack->channel[INST_STACK_MAX_STRING_LEN - 1] = '\0';
   stack->command[INST_STACK_MAX_STRING_LEN - 1] = '\0';
 
   return stack;

@@ -15,7 +15,7 @@ A `CallStack` represents four pieces of metadata:
 * Channel
 * Command
 
-Each field is stored as a fixed-size string, allowing for a compact and stable in-memory representation. This enables efficient serialization and avoids dynamic allocation within the object itself.
+Each field is stored as a fixed-size string, allowing for a compact and stable in-memory representation. This enables efficient serialization and avoids dynamic allocation within the object itself. The Channel is an int.
 
 ***
 
@@ -27,7 +27,7 @@ Each field is stored as a fixed-size string, allowing for a compact and stable i
 CallStack *instrument_call_stack_create(
     const char *instrument_name,
     const char *channel_group,
-    const char *channel,
+    int channel,
     const char *command);
 
 void instrument_call_stack_free(CallStack *stack);
@@ -42,7 +42,7 @@ The object is immutable after creation and must be released with `instrument_cal
 ```c
 const char *instrument_call_stack_get_instrument_name(const CallStack *);
 const char *instrument_call_stack_get_channel_group(const CallStack *);
-const char *instrument_call_stack_get_channel(const CallStack *);
+int instrument_call_stack_get_channel(const CallStack *);
 const char *instrument_call_stack_get_command(const CallStack *);
 ```
 

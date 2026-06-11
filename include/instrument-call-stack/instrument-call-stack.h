@@ -33,7 +33,7 @@ typedef struct CallStack CallStack;
  */
 INSTRUMENT_CALL_STACK_EXPORT CallStack *
 instrument_call_stack_create(const char *instrument_name,
-                             const char *channel_group, const char *channel,
+                             const char *channel_group, int channel,
                              const char *command);
 
 /**
@@ -64,7 +64,7 @@ instrument_call_stack_get_channel_group(const CallStack *stack);
 /**
  * @brief Retrieves the channel.
  */
-INSTRUMENT_CALL_STACK_EXPORT const char *
+INSTRUMENT_CALL_STACK_EXPORT const int
 instrument_call_stack_get_channel(const CallStack *stack);
 
 /**
@@ -89,7 +89,7 @@ instrument_call_stack_get_command(const CallStack *stack);
  *       If dynamic allocation is used, a matching free API should also be
  * provided.
  */
-INSTRUMENT_CALL_STACK_EXPORT const char *
+INSTRUMENT_CALL_STACK_EXPORT char *
 instrument_call_stack_serialize(const CallStack *stack);
 
 /**

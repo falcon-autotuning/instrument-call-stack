@@ -16,7 +16,8 @@
         "USE_CCACHE": "ON",
         "ENABLE_PCH": "ON",
         "BUILD_TESTS": "ON",
-        "BUILD_LUA": "ON"
+        "BUILD_LUA": "ON",
+        "VCPKG_FEATURE_TARGETS": "lua"
       }
     },
     {
