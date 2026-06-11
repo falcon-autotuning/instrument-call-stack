@@ -105,3 +105,14 @@ CallStack *instrument_call_stack_deserialize(const char *buffer) {
 
   return stack;
 }
+
+CallStack *instrument_call_stack_clone(const CallStack *stack) {
+  if (!stack)
+    return NULL;
+
+  return instrument_call_stack_create(
+      instrument_call_stack_get_instrument_name(stack),
+      instrument_call_stack_get_channel_group(stack),
+      instrument_call_stack_get_channel(stack),
+      instrument_call_stack_get_command(stack));
+}

@@ -102,6 +102,12 @@ instrument_call_stack_serialize(const CallStack *stack);
 INSTRUMENT_CALL_STACK_EXPORT CallStack *
 instrument_call_stack_deserialize(const char *buffer);
 
+/**
+ * @brief Implements a deep copy of a CallStack instance.
+ */
+INSTRUMENT_CALL_STACK_EXPORT CallStack *
+instrument_call_stack_clone(const CallStack *stack);
+
 #ifdef __cplusplus
 }
 #endif
