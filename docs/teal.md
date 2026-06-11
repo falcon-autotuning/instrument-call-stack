@@ -3,6 +3,8 @@
 The Lua binding exposes `CallStack` objects as userdata with methods.  
 These can be used in Teal via a type declaration file.
 
+See the `teal/iinstrument_call_stack.d.tl` for explicit types.
+
 ## Example
 
 ```lua

@@ -48,6 +48,55 @@ static int l_get_command(lua_State *L) {
   return 1;
 }
 
+static int l_callstack_new(lua_State *L) {
+  const char *instrument = luaL_optstring(L, 1, "");
+  const char *group = luaL_optstring(L, 2, "");
+  int channel = (int)luaL_optinteger(L, 3, -1);
+  const char *command = luaL_optstring(L, 4, "");
+
+  CallStack *cs =
+      instrument_call_stack_create(instrument, group, channel, command);
+
+  if (!cs) {
+    return luaL_error(L, "Failed to create CallStack");
+  }
+
+  push_callstack(L, cs, 1); // Lua owns it
+  return 1;
+}
+
+static int l_callstack_clone(lua_State *L) {
+  lua_callstack *cs = check_callstack(L);
+
+  CallStack *copy = instrument_call_stack_create(
+      instrument_call_stack_get_instrument_name(cs->stack),
+      instrument_call_stack_get_channel_group(cs->stack),
+      instrument_call_stack_get_channel(cs->stack),
+      instrument_call_stack_get_command(cs->stack));
+
+  if (!copy) {
+    return luaL_error(L, "Failed to clone CallStack");
+  }
+
+  push_callstack(L, copy, 1); // new Lua-owned object
+  return 1;
+}
+
+static int l_callstack_tostring(lua_State *L) {
+  lua_callstack *cs = check_callstack(L);
+
+  lua_pushfstring(L, "CallStack(%s,%s,%d,%s)",
+                  instrument_call_stack_get_instrument_name(cs->stack),
+                  instrument_call_stack_get_channel_group(cs->stack),
+                  instrument_call_stack_get_channel(cs->stack),
+                  instrument_call_stack_get_command(cs->stack));
+
+  return 1;
+}
+static int l_callstack_to_string(lua_State *L) {
+  return l_callstack_tostring(L);
+}
+
 /* =========================
    GC
    ========================= */
@@ -72,6 +121,8 @@ static const luaL_Reg callstack_methods[] = {
     {"get_channel_group", l_get_channel_group},
     {"get_channel", l_get_channel},
     {"get_command", l_get_command},
+    {"clone", l_callstack_clone},
+    {"to_string", l_callstack_to_string},
     {NULL, NULL}};
 
 /* =========================
@@ -104,22 +155,25 @@ void register_instrument_call_stack(lua_State *L) {
    Module Init
    ========================= */
 
+static const luaL_Reg module_funcs[] = {{"new", l_callstack_new}, {NULL, NULL}};
+
 int luaopen_instrument_call_stack(lua_State *L) {
-  /* Create metatable */
   luaL_newmetatable(L, "CallStack");
 
-  /* __gc */
+  lua_pushcfunction(L, l_callstack_tostring);
+  lua_setfield(L, -2, "__tostring");
+
   lua_pushcfunction(L, l_callstack_gc);
   lua_setfield(L, -2, "__gc");
 
-  /* __index */
   lua_newtable(L);
   luaL_setfuncs(L, callstack_methods, 0);
   lua_setfield(L, -2, "__index");
 
   lua_pop(L, 1);
 
-  /* return module table (empty for now) */
   lua_newtable(L);
+  luaL_setfuncs(L, module_funcs, 0);
+
   return 1;
 }

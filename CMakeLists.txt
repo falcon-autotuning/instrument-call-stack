@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(
   instrument-call-stack
-  VERSION 1.0.1
+  VERSION 1.0.2
   DESCRIPTION "A call stack implemenation in C99 for use by Cpp, Go, and Lua"
   HOMEPAGE_URL "https://github.com/falcon-autotuning/instrument-call-stack"
   LANGUAGES C
@@ -76,7 +76,7 @@ if(BUILD_LUA)
   endif()
 
   add_library(instrument-call-stack-lua SHARED
-    src/instrument_call_stack_lua.c
+    src/instrument-call-stack-lua.c
   )
 
   target_link_libraries(instrument-call-stack-lua

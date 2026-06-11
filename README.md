@@ -63,7 +63,17 @@ Serialization produces a fixed-size binary representation suitable for transmiss
 
 ## Lua Bindings
 
-Lua bindings are optional and controlled by the `BUILD_LUA` build option. When enabled, `CallStack` objects can be exposed to Lua as userdata with read-only access to their fields.
+Lua bindings are optional and controlled by the `BUILD_LUA` build option. When enabled, `CallStack` objects can be created and used directly from Lua as userdata with read-only access to their fields.
+
+### Creating CallStacks
+
+```lua
+local stack = instrument_call_stack.new("instrument", "group", 1, "command")
+```
+
+All arguments are optional and default to empty values (`""` or `-1` for channel).
+
+***
 
 ### Available methods
 
@@ -72,17 +82,40 @@ stack:get_instrument_name()
 stack:get_channel_group()
 stack:get_channel()
 stack:get_command()
+
+stack:clone()
+stack:to_string()
+```
+
+#### Notes
+
+* `clone()` returns a new independent `CallStack`
+* `to_string()` returns a formatted string representation
+* `tostring(stack)` is also supported via Lua’s `__tostring` metamethod
+
+***
+
+### Example
+
+```lua
+local stack1 = instrument_call_stack.new("i", "g", 1, "cmd")
+local stack2 = stack1:clone()
+
+print(stack1:get_command())    -- "cmd"
+print(stack2:to_string())      -- CallStack(i,g,1,cmd)
+print(stack1 ~= stack2)        -- true
 ```
 
 ***
 
-### Passing objects to Lua
+### Passing objects from C
 
 ```c
 push_callstack_global(L, stack, owned, "stack");
 ```
 
-This makes the object available to Lua as a global variable. The `owned` flag determines whether Lua is responsible for freeing the underlying object when it is garbage collected.
+This exposes a `CallStack` to Lua as a global value.  
+The `owned` flag determines whether Lua is responsible for freeing the object during garbage collection.
 
 ***
 
@@ -92,7 +125,7 @@ This makes the object available to Lua as a global variable. The `owned` flag de
 register_instrument_call_stack(L);
 ```
 
-Registers a module table in the Lua state.
+Registers the `instrument_call_stack` module in the Lua state, enabling construction via `instrument_call_stack.new(...)`.
 
 ***
 
