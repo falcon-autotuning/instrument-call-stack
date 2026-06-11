@@ -96,6 +96,15 @@ Registers a module table in the Lua state.
 
 ***
 
+## Teal Support
+
+This library can be used from Teal (typed Lua) via the provided
+type definitions.
+
+See `docs/teal.md` for details.
+
+***
+
 ## Building
 
 The project uses CMake and a Makefile wrapper. Dependencies are managed via vcpkg.
