@@ -1,3 +1,10 @@
+global record CallStackSpec
+   instrument: string
+   command: string
+   group: string | nil
+   channel: integer | nil
+end
+
 global record CallStack
    get_instrument_name: function(self: CallStack): string
    get_channel_group: function(self: CallStack): string
@@ -8,5 +15,5 @@ global record CallStack
 end
 
 global record instrument_call_stack
-   new: function(string, string, number, string): CallStack
+   new: function(CallStackSpec): CallStack
 end

@@ -186,13 +186,17 @@ static void test_lua_constructor_basic(void **state) {
 
   register_instrument_call_stack(L);
 
-  assert_int_equal(
-      luaL_dostring(L, "local cs = instrument_call_stack.new('a','b',7,'c')\n"
-                       "assert(cs:get_instrument_name() == 'a')\n"
-                       "assert(cs:get_channel_group() == 'b')\n"
-                       "assert(cs:get_channel() == 7)\n"
-                       "assert(cs:get_command() == 'c')\n"),
-      LUA_OK);
+  assert_int_equal(luaL_dostring(L, "local cs = instrument_call_stack.new{\n"
+                                    "  instrument = 'a',\n"
+                                    "  group = 'b',\n"
+                                    "  channel = 7,\n"
+                                    "  command = 'c'\n"
+                                    "}\n"
+                                    "assert(cs:get_instrument_name() == 'a')\n"
+                                    "assert(cs:get_channel_group() == 'b')\n"
+                                    "assert(cs:get_channel() == 7)\n"
+                                    "assert(cs:get_command() == 'c')\n"),
+                   LUA_OK);
 
   lua_close(L);
 }
@@ -204,11 +208,14 @@ static void test_lua_constructor_defaults(void **state) {
 
   register_instrument_call_stack(L);
 
-  assert_int_equal(luaL_dostring(L, "local cs = instrument_call_stack.new()\n"
-                                    "assert(cs:get_instrument_name() == '')\n"
+  assert_int_equal(luaL_dostring(L, "local cs = instrument_call_stack.new{\n"
+                                    "  instrument = 'x',\n"
+                                    "  command = 'y'\n"
+                                    "}\n"
+                                    "assert(cs:get_instrument_name() == 'x')\n"
                                     "assert(cs:get_channel_group() == '')\n"
                                     "assert(cs:get_channel() == -1)\n"
-                                    "assert(cs:get_command() == '')\n"),
+                                    "assert(cs:get_command() == 'y')\n"),
                    LUA_OK);
 
   lua_close(L);
@@ -221,14 +228,18 @@ static void test_lua_clone_basic(void **state) {
 
   register_instrument_call_stack(L);
 
-  assert_int_equal(
-      luaL_dostring(L, "local cs1 = instrument_call_stack.new('x','y',9,'z')\n"
-                       "local cs2 = cs1:clone()\n"
-                       "assert(cs2:get_instrument_name() == 'x')\n"
-                       "assert(cs2:get_channel_group() == 'y')\n"
-                       "assert(cs2:get_channel() == 9)\n"
-                       "assert(cs2:get_command() == 'z')\n"),
-      LUA_OK);
+  assert_int_equal(luaL_dostring(L, "local cs1 = instrument_call_stack.new{\n"
+                                    "  instrument = 'x',\n"
+                                    "  group = 'y',\n"
+                                    "  channel = 9,\n"
+                                    "  command = 'z'\n"
+                                    "}\n"
+                                    "local cs2 = cs1:clone()\n"
+                                    "assert(cs2:get_instrument_name() == 'x')\n"
+                                    "assert(cs2:get_channel_group() == 'y')\n"
+                                    "assert(cs2:get_channel() == 9)\n"
+                                    "assert(cs2:get_command() == 'z')\n"),
+                   LUA_OK);
 
   lua_close(L);
 }
@@ -240,14 +251,15 @@ static void test_lua_clone_independence(void **state) {
 
   register_instrument_call_stack(L);
 
-  /*
-    Ensures clone is a different object (not same userdata)
-  */
-  assert_int_equal(
-      luaL_dostring(L, "local cs1 = instrument_call_stack.new('a','b',1,'c')\n"
-                       "local cs2 = cs1:clone()\n"
-                       "assert(cs1 ~= cs2)\n"),
-      LUA_OK);
+  assert_int_equal(luaL_dostring(L, "local cs1 = instrument_call_stack.new{\n"
+                                    "  instrument = 'a',\n"
+                                    "  group = 'b',\n"
+                                    "  channel = 1,\n"
+                                    "  command = 'c'\n"
+                                    "}\n"
+                                    "local cs2 = cs1:clone()\n"
+                                    "assert(cs1 ~= cs2)\n"),
+                   LUA_OK);
 
   lua_close(L);
 }
@@ -259,17 +271,31 @@ static void test_lua_clone_gc_owned(void **state) {
 
   register_instrument_call_stack(L);
 
-  /*
-    Clone should be owned by Lua and GC-safe
-  */
-  assert_int_equal(
-      luaL_dostring(L,
-                    "local cs1 = instrument_call_stack.new('x','y',3,'cmd')\n"
-                    "local cs2 = cs1:clone()\n"
-                    "cs1 = nil\n"
-                    "cs2 = nil\n"
-                    "collectgarbage()\n"),
-      LUA_OK);
+  assert_int_equal(luaL_dostring(L, "local cs1 = instrument_call_stack.new{\n"
+                                    "  instrument = 'x',\n"
+                                    "  group = 'y',\n"
+                                    "  channel = 3,\n"
+                                    "  command = 'cmd'\n"
+                                    "}\n"
+                                    "local cs2 = cs1:clone()\n"
+                                    "cs1 = nil\n"
+                                    "cs2 = nil\n"
+                                    "collectgarbage()\n"),
+                   LUA_OK);
+
+  lua_close(L);
+}
+
+static void test_lua_constructor_missing_required(void **state) {
+  (void)state;
+
+  lua_State *L = create_lua();
+  register_instrument_call_stack(L);
+
+  assert_true(luaL_dostring(L, "local ok, err = pcall(function()\n"
+                               "  instrument_call_stack.new{}\n"
+                               "end)\n"
+                               "assert(ok == false)\n") == LUA_OK);
 
   lua_close(L);
 }
@@ -293,6 +319,7 @@ int main(void) {
       cmocka_unit_test(test_lua_clone_basic),
       cmocka_unit_test(test_lua_clone_independence),
       cmocka_unit_test(test_lua_clone_gc_owned),
+      cmocka_unit_test(test_lua_constructor_missing_required),
   };
 
   return cmocka_run_group_tests(tests, NULL, NULL);

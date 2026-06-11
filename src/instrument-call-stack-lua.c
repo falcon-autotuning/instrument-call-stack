@@ -49,10 +49,46 @@ static int l_get_command(lua_State *L) {
 }
 
 static int l_callstack_new(lua_State *L) {
-  const char *instrument = luaL_optstring(L, 1, "");
-  const char *group = luaL_optstring(L, 2, "");
-  int channel = (int)luaL_optinteger(L, 3, -1);
-  const char *command = luaL_optstring(L, 4, "");
+  if (!lua_istable(L, 1)) {
+    return luaL_error(L, "instrument_call_stack.new expects a table");
+  }
+
+  const char *instrument = "";
+  const char *group = "";
+  const char *command = "";
+  int channel = -1;
+
+  /* instrument (required) */
+  lua_getfield(L, 1, "instrument");
+  if (lua_isnil(L, -1)) {
+    lua_pop(L, 1);
+    return luaL_error(L, "instrument is required");
+  }
+  instrument = luaL_checkstring(L, -1);
+  lua_pop(L, 1);
+
+  /* group (optional) */
+  lua_getfield(L, 1, "group");
+  if (!lua_isnil(L, -1)) {
+    group = luaL_checkstring(L, -1);
+  }
+  lua_pop(L, 1);
+
+  /* channel (optional) */
+  lua_getfield(L, 1, "channel");
+  if (!lua_isnil(L, -1)) {
+    channel = (int)luaL_checkinteger(L, -1);
+  }
+  lua_pop(L, 1);
+
+  /* command (required) */
+  lua_getfield(L, 1, "command");
+  if (lua_isnil(L, -1)) {
+    lua_pop(L, 1);
+    return luaL_error(L, "command is required");
+  }
+  command = luaL_checkstring(L, -1);
+  lua_pop(L, 1);
 
   CallStack *cs =
       instrument_call_stack_create(instrument, group, channel, command);
@@ -61,7 +97,7 @@ static int l_callstack_new(lua_State *L) {
     return luaL_error(L, "Failed to create CallStack");
   }
 
-  push_callstack(L, cs, 1); // Lua owns it
+  push_callstack(L, cs, 1);
   return 1;
 }
 

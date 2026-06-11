@@ -65,13 +65,30 @@ Serialization produces a fixed-size binary representation suitable for transmiss
 
 Lua bindings are optional and controlled by the `BUILD_LUA` build option. When enabled, `CallStack` objects can be created and used directly from Lua as userdata with read-only access to their fields.
 
+***
+
 ### Creating CallStacks
 
+CallStacks are created using a table-based constructor:
+
 ```lua
-local stack = instrument_call_stack.new("instrument", "group", 1, "command")
+local stack = instrument_call_stack.new{
+  instrument = "instrument",
+  command    = "command",
+  group      = "group",   -- optional
+  channel    = 1          -- optional
+}
 ```
 
-All arguments are optional and default to empty values (`""` or `-1` for channel).
+#### Required fields
+
+* `instrument`
+* `command`
+
+#### Optional fields
+
+* `group` (defaults to `""`)
+* `channel` (defaults to `-1`)
 
 ***
 
@@ -98,12 +115,34 @@ stack:to_string()
 ### Example
 
 ```lua
-local stack1 = instrument_call_stack.new("i", "g", 1, "cmd")
+local stack1 = instrument_call_stack.new{
+  instrument = "i",
+  group = "g",
+  channel = 1,
+  command = "cmd"
+}
+
 local stack2 = stack1:clone()
 
 print(stack1:get_command())    -- "cmd"
 print(stack2:to_string())      -- CallStack(i,g,1,cmd)
 print(stack1 ~= stack2)        -- true
+```
+
+***
+
+### Minimal example
+
+Only required fields need to be provided:
+
+```lua
+local stack = instrument_call_stack.new{
+  instrument = "i",
+  command = "cmd"
+}
+
+print(stack:get_channel())      -- -1
+print(stack:get_channel_group())-- ""
 ```
 
 ***
