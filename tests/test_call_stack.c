@@ -228,6 +228,27 @@ static void test_deserialize_corrupted(void **state) {
   instrument_call_stack_free(cs);
 }
 
+static void test_c_string_truncation(void **state) {
+  (void)state;
+
+  CallStack *cs = instrument_call_stack_create(VALID_NAME, VALID_GROUP,
+                                               VALID_CHANNEL, VALID_COMMAND);
+
+  char *blob = instrument_call_stack_serialize(cs);
+  assert_non_null(blob);
+
+  size_t len = strlen(blob);
+
+  // strlen stops at first '\0'
+  assert_true(len < INST_CALL_STACK_SERIALIZED_MAX_SIZE);
+
+  // The first field should still match
+  assert_string_equal(blob, VALID_NAME);
+
+  free(blob);
+  instrument_call_stack_free(cs);
+}
+
 /* =========================
    MAIN
    ========================= */
@@ -251,7 +272,7 @@ int main(void) {
 
       cmocka_unit_test(test_roundtrip),
       cmocka_unit_test(test_deserialize_corrupted),
-  };
+      cmocka_unit_test(test_c_string_truncation)};
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }
