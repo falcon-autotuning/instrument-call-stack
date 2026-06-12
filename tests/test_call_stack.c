@@ -218,17 +218,13 @@ static void test_deserialize_corrupted(void **state) {
   memset(blob, 0xFF, INST_CALL_STACK_SERIALIZED_MAX_SIZE);
 
   CallStack *cs = instrument_call_stack_deserialize(blob);
-  assert_non_null(cs);
-
-  /* Should still be null-terminated safely */
-  assert_true(instrument_call_stack_get_instrument_name(
-                  cs)[INST_STACK_MAX_STRING_LEN - 1] == '\0');
+  assert_null(cs);
 
   free(blob);
   instrument_call_stack_free(cs);
 }
 
-static void test_c_string_truncation(void **state) {
+static void test_serialization_is_string_safe(void **state) {
   (void)state;
 
   CallStack *cs = instrument_call_stack_create(VALID_NAME, VALID_GROUP,
@@ -239,14 +235,101 @@ static void test_c_string_truncation(void **state) {
 
   size_t len = strlen(blob);
 
-  // strlen stops at first '\0'
-  assert_true(len < INST_CALL_STACK_SERIALIZED_MAX_SIZE);
+  // ✅ string should not be empty
+  assert_true(len > 0);
 
-  // The first field should still match
-  assert_string_equal(blob, VALID_NAME);
+  // ✅ ensure no embedded nulls
+  for (size_t i = 0; i < len; i++) {
+    assert_true(blob[i] != '\0');
+  }
+
+  // ✅ ensure proper termination
+  assert_int_equal(blob[len], '\0');
+
+  // ✅ ensure expected delimiters exist
+  assert_non_null(strchr(blob, '|'));
+
+  // ✅ ensure full structure present
+  assert_non_null(strstr(blob, VALID_NAME));
+  assert_non_null(strstr(blob, VALID_GROUP));
+  assert_non_null(strstr(blob, VALID_COMMAND));
 
   free(blob);
   instrument_call_stack_free(cs);
+}
+
+static void test_string_safe_roundtrip(void **state) {
+  (void)state;
+
+  CallStack *original = instrument_call_stack_create(
+      VALID_NAME, VALID_GROUP, VALID_CHANNEL, VALID_COMMAND);
+
+  char *blob = instrument_call_stack_serialize(original);
+  CallStack *copy = instrument_call_stack_deserialize(blob);
+
+  assert_non_null(copy);
+
+  assert_string_equal(instrument_call_stack_get_instrument_name(copy),
+                      VALID_NAME);
+
+  assert_string_equal(instrument_call_stack_get_channel_group(copy),
+                      VALID_GROUP);
+
+  assert_int_equal(instrument_call_stack_get_channel(copy), VALID_CHANNEL);
+
+  assert_string_equal(instrument_call_stack_get_command(copy), VALID_COMMAND);
+
+  free(blob);
+  instrument_call_stack_free(original);
+  instrument_call_stack_free(copy);
+}
+
+static void test_string_transport_safe(void **state) {
+  (void)state;
+
+  CallStack *original = instrument_call_stack_create(
+      VALID_NAME, VALID_GROUP, VALID_CHANNEL, VALID_COMMAND);
+
+  char *blob = instrument_call_stack_serialize(original);
+  assert_non_null(blob);
+
+  // ✅ simulate std::string(blob)
+  size_t len = strlen(blob);
+
+  // ✅ if this works, std::string will be safe
+  CallStack *copy = instrument_call_stack_deserialize(blob);
+
+  assert_non_null(copy);
+
+  assert_string_equal(instrument_call_stack_get_instrument_name(copy),
+                      VALID_NAME);
+
+  assert_string_equal(instrument_call_stack_get_channel_group(copy),
+                      VALID_GROUP);
+
+  assert_int_equal(instrument_call_stack_get_channel(copy), VALID_CHANNEL);
+
+  assert_string_equal(instrument_call_stack_get_command(copy), VALID_COMMAND);
+
+  free(blob);
+  instrument_call_stack_free(original);
+  instrument_call_stack_free(copy);
+}
+static void test_deserialize_invalid_format(void **state) {
+  (void)state;
+
+  const char *bad = "not|enough|fields";
+
+  CallStack *cs = instrument_call_stack_deserialize(bad);
+
+  assert_null(cs);
+}
+static void test_deserialize_empty_string(void **state) {
+  (void)state;
+
+  CallStack *cs = instrument_call_stack_deserialize("");
+
+  assert_null(cs);
 }
 
 /* =========================
@@ -272,7 +355,12 @@ int main(void) {
 
       cmocka_unit_test(test_roundtrip),
       cmocka_unit_test(test_deserialize_corrupted),
-      cmocka_unit_test(test_c_string_truncation)};
+      cmocka_unit_test(test_deserialize_corrupted),
+      cmocka_unit_test(test_deserialize_invalid_format),
+      cmocka_unit_test(test_serialization_is_string_safe),
+      cmocka_unit_test(test_string_safe_roundtrip),
+      cmocka_unit_test(test_string_transport_safe),
+  };
 
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -1,5 +1,6 @@
 #include "instrument-call-stack/instrument-call-stack.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -77,13 +78,17 @@ char *instrument_call_stack_serialize(const CallStack *stack) {
   if (!stack)
     return NULL;
 
-  /* Allocate fixed-size blob */
-  char *buffer = (char *)malloc(INST_CALL_STACK_SERIALIZED_MAX_SIZE);
-  if (!buffer) {
-    return NULL;
-  }
+  // Worst-case size estimate:
+  // 3 strings (64 each) + delimiters + int + null
+  size_t max_size = 3 * INST_STACK_MAX_STRING_LEN + 32; // safe margin
 
-  memcpy(buffer, stack, sizeof(CallStack));
+  char *buffer = (char *)malloc(max_size);
+  if (!buffer)
+    return NULL;
+
+  snprintf(buffer, max_size, "%s|%s|%d|%s", stack->instrument_name,
+           stack->channel_group, stack->channel, stack->command);
+
   return buffer;
 }
 
@@ -92,16 +97,29 @@ CallStack *instrument_call_stack_deserialize(const char *buffer) {
     return NULL;
 
   CallStack *stack = (CallStack *)malloc(sizeof(CallStack));
-  if (!stack) {
+  if (!stack)
+    return NULL;
+
+  memset(stack, 0, sizeof(CallStack));
+
+  char instrument[INST_STACK_MAX_STRING_LEN] = {0};
+  char group[INST_STACK_MAX_STRING_LEN] = {0};
+  char command[INST_STACK_MAX_STRING_LEN] = {0};
+  int channel = 0;
+
+  int parsed = sscanf(buffer, "%63[^|]|%63[^|]|%d|%63[^|]", instrument, group,
+                      &channel, command);
+
+  if (parsed != 4) {
+    free(stack);
     return NULL;
   }
 
-  memcpy(stack, buffer, sizeof(CallStack));
+  strncpy(stack->instrument_name, instrument, INST_STACK_MAX_STRING_LEN - 1);
+  strncpy(stack->channel_group, group, INST_STACK_MAX_STRING_LEN - 1);
+  strncpy(stack->command, command, INST_STACK_MAX_STRING_LEN - 1);
 
-  /* Enforce null termination defensively */
-  stack->instrument_name[INST_STACK_MAX_STRING_LEN - 1] = '\0';
-  stack->channel_group[INST_STACK_MAX_STRING_LEN - 1] = '\0';
-  stack->command[INST_STACK_MAX_STRING_LEN - 1] = '\0';
+  stack->channel = channel;
 
   return stack;
 }

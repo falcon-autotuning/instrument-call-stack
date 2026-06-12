@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(
   instrument-call-stack
-  VERSION 1.0.5
+  VERSION 1.0.6
   DESCRIPTION "A call stack implemenation in C99 for use by Cpp, Go, and Lua"
   HOMEPAGE_URL "https://github.com/falcon-autotuning/instrument-call-stack"
   LANGUAGES C
